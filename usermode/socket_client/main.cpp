@@ -123,7 +123,7 @@ int main()
 	driver::clean_piddbcachetable(manager::m_connection);
 	driver::clean_mmunloadeddrivers(manager::m_connection);
 
-	manager::m_pid = find_process_by_id("notepad.exe");
+	manager::m_pid = find_process_by_id("rainbow6.exe");
 	manager::m_base = driver::get_process_base_address(manager::m_connection, manager::m_pid);
 
 	struct nk_context* ctx;
