@@ -22,31 +22,30 @@ static ID3D11Device* device;
 static ID3D11DeviceContext* context;
 static ID3D11RenderTargetView* rt_view;
 
-static uint32_t
-find_process_by_id(const char* name)
+static
+DWORD get_process_id(LPCSTR lpExeName)
 {
-	const auto snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-	if (snap == INVALID_HANDLE_VALUE) {
-		return 0;
+	HANDLE hSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+	if (hSnapShot == INVALID_HANDLE_VALUE)
+		return NULL;
+
+	PROCESSENTRY32 pe = { 0 };
+	pe.dwSize = sizeof(PROCESSENTRY32);
+
+	for (BOOL	success = Process32First(hSnapShot, &pe);
+		success == TRUE;
+		success = Process32Next(hSnapShot, &pe))
+	{
+		if (strcmp(lpExeName, pe.szExeFile) == 0)
+		{
+			CloseHandle(hSnapShot);
+			return pe.th32ProcessID;
+		}
 	}
 
-	PROCESSENTRY32 proc_entry;
-	proc_entry.dwSize = sizeof proc_entry;
-
-	auto found_process = FALSE;
-	if (!!Process32First(snap, &proc_entry)) {
-		do {
-			if (name == proc_entry.szExeFile) {
-				found_process = TRUE;
-				break;
-			}
-		} while (!!Process32Next(snap, &proc_entry));
-	}
-
-	CloseHandle(snap);
-	return found_process
-		? proc_entry.th32ProcessID
-		: 0;
+	CloseHandle(hSnapShot);
+	return NULL;
 }
 
 static void
@@ -123,7 +122,7 @@ int main()
 	driver::clean_piddbcachetable(manager::m_connection);
 	driver::clean_mmunloadeddrivers(manager::m_connection);
 
-	manager::m_pid = find_process_by_id("rainbow6.exe");
+	manager::m_pid = get_process_id("RainbowSix.exe");
 	manager::m_base = driver::get_process_base_address(manager::m_connection, manager::m_pid);
 
 	struct nk_context* ctx;
