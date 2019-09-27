@@ -6,9 +6,9 @@
 #include <vector>
 
 namespace manager {
-	static uint32_t m_pid;
-	static uintptr_t m_base;
-	static SOCKET m_connection;
+	uint32_t m_pid;
+	uintptr_t m_base;
+	SOCKET m_connection;
 
 	unsigned long get_player_count()
 	{
