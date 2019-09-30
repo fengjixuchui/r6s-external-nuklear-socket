@@ -11,6 +11,8 @@ Application comes with a couple examples of how to do a cool gui: login panel & 
 ![login panel](https://i.gyazo.com/d638a026986b0cfdb3a3142b84c4eda9.png)
 ![cheat gui](https://i.gyazo.com/aecea264cba5c72d05f25976a05ffb9a.png)
 
+## String Encryption
+
 Strings are encypted using xor string:
 ![1337 cheats](https://i.gyazo.com/f0d8ccc0789cc55ab43837919e294487.png)
 
