@@ -3,6 +3,9 @@ Simple copy paste ready base for external cheats using sockets for km-um communi
 
 Driver is made for winver: 1803-1903.
 
+Link to kdmapper for winver: 1803-1903. 
+https://github.com/alxbrn/kdmapper-1803-1903
+
 ## Gui Example
 Application comes with a couple examples of how to do a cool gui: login panel & gui
 ![login panel](https://i.gyazo.com/d638a026986b0cfdb3a3142b84c4eda9.png)
