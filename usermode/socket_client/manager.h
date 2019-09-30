@@ -165,8 +165,6 @@ namespace manager {
 	{
 		uint64_t game_manager = driver::read<uint64_t>(m_connection, m_pid, m_base + offsets::game_manager);
 
-		std::cout << "m_base: " << m_base << std::endl;
-
 		if (!game_manager)
 			return NULL;
 

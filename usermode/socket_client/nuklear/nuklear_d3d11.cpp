@@ -2,6 +2,7 @@
 
 #define NK_IMPLEMENTATION
 #include "nuklear.h"
+#include "../xor.h"
 
 NK_API void
 nk_d3d11_render(ID3D11DeviceContext* context, enum nk_anti_aliasing AA) {
@@ -367,9 +368,9 @@ nk_d3d11_init(ID3D11Device* device, int width, int height, unsigned int max_vert
 	/* input layout */
 	{
 		const D3D11_INPUT_ELEMENT_DESC layout[] = {
-		   { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(struct nk_d3d11_vertex, position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		   { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, offsetof(struct nk_d3d11_vertex, uv),       D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		   { "COLOR",    0, DXGI_FORMAT_R8G8B8A8_UNORM,     0, offsetof(struct nk_d3d11_vertex, col),      D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		   { xorstr_("POSITION"), 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(struct nk_d3d11_vertex, position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		   { xorstr_("TEXCOORD"), 0, DXGI_FORMAT_R32G32_FLOAT,       0, offsetof(struct nk_d3d11_vertex, uv),       D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		   { xorstr_("COLOR"),    0, DXGI_FORMAT_R8G8B8A8_UNORM,     0, offsetof(struct nk_d3d11_vertex, col),      D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		};
 		hr = device->CreateInputLayout(layout, ARRAYSIZE(layout), nk_d3d11_vertex_shader, sizeof(nk_d3d11_vertex_shader), &d3d11.input_layout);
 		NK_ASSERT(SUCCEEDED(hr));
