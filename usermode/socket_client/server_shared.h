@@ -3,7 +3,7 @@
 
 constexpr auto packet_magic = 0x12345568;
 constexpr auto server_ip = 0x7F000001; // 127.0.0.1
-constexpr auto server_port = 27015;
+constexpr auto server_port = 28055;
 
 enum class PacketType
 {
@@ -11,7 +11,7 @@ enum class PacketType
 	packet_get_base_address,
 	packet_clean_piddbcachetable,
 	packet_clean_mmunloadeddrivers,
-	packet_spoof_drives,
+	packet_hwid_spoofing,
 	packet_completed
 };
 
@@ -31,18 +31,13 @@ struct PacketGetBaseAddress
 	uint32_t process_id;
 };
 
-struct PacketGetProcessId
-{
-	char* process_name;
-};
-
 struct PacketCleanPiDDBCacheTable {
 };
 
 struct PacketCleanMMUnloadedDrivers {
 };
 
-struct PacketSpoofDrives {
+struct PacketHwidSpoofing {
 };
 
 struct PackedCompleted
@@ -65,7 +60,7 @@ struct Packet
 		PacketGetBaseAddress get_base_address;
 		PacketCleanPiDDBCacheTable clean_piddbcachetable;
 		PacketCleanMMUnloadedDrivers clean_mmunloadeddrivers;
-		PacketSpoofDrives	 spoof_drives;
+		PacketHwidSpoofing hwid_spoofing;
 		PackedCompleted		 completed;
 	} data;
 };

@@ -7,29 +7,18 @@ extern "C" NTSTATUS DriverEntry(
 	PUNICODE_STRING registry_path
 )
 {
-	// These are invalid for mapped drivers.
+	KeEnterGuardedRegion();
+
 	UNREFERENCED_PARAMETER(driver_object);
 	UNREFERENCED_PARAMETER(registry_path);
 
-	HANDLE thread_handle = nullptr;
+	PWORK_QUEUE_ITEM WorkItem = (PWORK_QUEUE_ITEM)ExAllocatePool(NonPagedPool, sizeof(WORK_QUEUE_ITEM));
 
-	// Create server thread that will wait for incoming connections.
-	const auto status = PsCreateSystemThread(
-		&thread_handle,
-		GENERIC_ALL,
-		nullptr,
-		nullptr,
-		nullptr,
-		server_thread,
-		nullptr
-	);
+	ExInitializeWorkItem(WorkItem, server_thread, WorkItem);
 
-	if (!NT_SUCCESS(status))
-	{
-		log("Failed to create server thread. Status code: %X.", status);
-		return STATUS_UNSUCCESSFUL;
-	}
+	ExQueueWorkItem(WorkItem, DelayedWorkQueue);
 
-	ZwClose(thread_handle);
+	KeLeaveGuardedRegion();
+
 	return STATUS_SUCCESS;
 }

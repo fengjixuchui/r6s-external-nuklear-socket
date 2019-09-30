@@ -26,6 +26,7 @@
 
 typedef struct ID3D11Device ID3D11Device;
 typedef struct ID3D11DeviceContext ID3D11DeviceContext;
+enum theme { THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK };
 
 struct nk_d3d11_vertex {
 	float position[2];
@@ -87,4 +88,6 @@ nk_d3d11_font_stash_end(void);
 NK_API
 void nk_d3d11_shutdown(void);
 
+NK_API
+void set_style(struct nk_context* ctx, enum theme theme);
 #endif

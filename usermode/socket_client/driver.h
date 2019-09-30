@@ -15,7 +15,7 @@ namespace driver
 	uint64_t get_process_base_address(SOCKET connection, uint32_t process_id);
 	uint64_t clean_piddbcachetable(SOCKET connection);
 	uint64_t clean_mmunloadeddrivers(SOCKET connection);
-	uint64_t spoof_drives(SOCKET connection);
+	uint64_t hwid_spoofing(SOCKET connection);
 
 	template <typename T>
 	T read(const SOCKET connection, const uint32_t process_id, const uintptr_t address)

@@ -134,10 +134,21 @@
     <ClInclude Include="nuklear\nuklear_d3d11.h" />
     <ClInclude Include="nuklear\nuklear_d3d11_pixel_shader.h" />
     <ClInclude Include="nuklear\nuklear_d3d11_vertex_shader.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="vector.h" />
     <ClInclude Include="manager.h" />
     <ClInclude Include="offsets.h" />
     <ClInclude Include="server_shared.h" />
+    <ClInclude Include="xor.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resource.aps" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

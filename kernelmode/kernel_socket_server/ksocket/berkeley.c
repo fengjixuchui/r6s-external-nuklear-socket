@@ -624,6 +624,7 @@ int sendto(int sockfd, const void* buf, size_t len, int flags, const struct sock
 
 	ULONG Length = (ULONG)len;
 	Status = KsSendTo(Socket, (PVOID)buf, &Length, (ULONG)flags, (PSOCKADDR)dest_addr);
+	Status = KsSendTo(Socket, (PVOID)buf, &Length, (ULONG)flags, (PSOCKADDR)dest_addr);
 
 	return NT_SUCCESS(Status)
 		? (int)Length

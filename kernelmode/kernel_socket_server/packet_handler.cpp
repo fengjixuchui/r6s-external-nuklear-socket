@@ -1,10 +1,11 @@
 #include "server_shared.h"
 #include "sockets.h"
 #include "imports.h"
-#include "log.h"
 
 static uint64_t handle_copy_memory(const PacketCopyMemory& packet)
 {
+	KeEnterGuardedRegion();
+
 	PEPROCESS dest_process = nullptr;
 	PEPROCESS src_process = nullptr;
 
@@ -33,11 +34,15 @@ static uint64_t handle_copy_memory(const PacketCopyMemory& packet)
 	ObDereferenceObject(dest_process);
 	ObDereferenceObject(src_process);
 
+	KeLeaveGuardedRegion();
+
 	return uint64_t(status);
 }
 
 static uint64_t handle_get_base_address(const PacketGetBaseAddress& packet)
 {
+	KeEnterGuardedRegion();
+
 	PEPROCESS process = nullptr;
 	NTSTATUS  status = PsLookupProcessByProcessId(HANDLE(packet.process_id), &process);
 
@@ -47,68 +52,15 @@ static uint64_t handle_get_base_address(const PacketGetBaseAddress& packet)
 	const auto base_address = uint64_t(PsGetProcessSectionBaseAddress(process));
 	ObDereferenceObject(process);
 
+	KeLeaveGuardedRegion();
+
 	return base_address;
 }
 
-// Send completion packet.
-bool complete_request(const SOCKET client_connection, const uint64_t result)
-{
-	Packet packet{ };
+static uint64_t handle_clean_piddb_cache() {
+	KeEnterGuardedRegion();
 
-	packet.header.magic = packet_magic;
-	packet.header.type = PacketType::packet_completed;
-	packet.data.completed.result = result;
-
-	return send(client_connection, &packet, sizeof(packet), 0) != SOCKET_ERROR;
-}
-
-static uintptr_t get_kernel_address(const char* name, size_t& size) {
-	NTSTATUS status = STATUS_SUCCESS;
-	ULONG neededSize = 0;
-
-	ZwQuerySystemInformation(
-		SystemModuleInformation,
-		&neededSize,
-		0,
-		&neededSize
-	);
-
-	PSYSTEM_MODULE_INFORMATION pModuleList;
-
-	pModuleList = (PSYSTEM_MODULE_INFORMATION)ExAllocatePool(NonPagedPool, neededSize);
-
-	if (!pModuleList) {
-		log("ExAllocatePoolWithTag failed(kernel addr)\n");
-		return 0;
-	}
-
-	status = ZwQuerySystemInformation(SystemModuleInformation,
-		pModuleList,
-		neededSize,
-		0
-	);
-
-	ULONG i = 0;
-	uintptr_t address = 0;
-
-	for (i = 0; i < pModuleList->ulModuleCount; i++)
-	{
-		SYSTEM_MODULE mod = pModuleList->Modules[i];
-
-		address = uintptr_t(pModuleList->Modules[i].Base);
-		size = uintptr_t(pModuleList->Modules[i].Size);
-		if (strstr(mod.ImageName, name) != NULL)
-			break;
-	}
-
-	ExFreePool(pModuleList);
-
-	return address;
-}
-
-static uint64_t clean_piddb_cache() {
 	log("clean_piddb_cache started!");
-	PRTL_AVL_TABLE PiDDBCacheTable;
 
 	size_t size;
 	uintptr_t ntoskrnlBase = get_kernel_address("ntoskrnl.exe", size);
@@ -116,7 +68,25 @@ static uint64_t clean_piddb_cache() {
 	log("ntoskrnl.exe: %d\n", ntoskrnlBase);
 	log("ntoskrnl.exe size: %d\n", size);
 
-	PiDDBCacheTable = (PRTL_AVL_TABLE)dereference(find_pattern<uintptr_t>((void*)ntoskrnlBase, size, "\x48\x8d\x0d\x00\x00\x00\x00\xe8\x00\x00\x00\x00\x3d\x00\x00\x00\x00\x0f\x83", "xxx????x????x????xx"), 3);
+	// 1809: \x48\x8D\x0D\x00\x00\x00\x00\x4C\x89\x35\x00\x00\x00\x00\x49 xxx????xxx????x
+	// 1903: \x48\x8d\x0d\x00\x00\x00\x00\xe8\x00\x00\x00\x00\x3d\x00\x00\x00\x00\x0f\x83 xxx????x????x????xx
+
+	RTL_OSVERSIONINFOW osVersion = { 0 };
+	osVersion.dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOW);
+	RtlGetVersion(&osVersion);
+
+	log("Windows Build Number: %d\n", osVersion.dwBuildNumber);
+	log("Windows Major Version: %d\n", osVersion.dwMajorVersion);
+	log("Windows Minor Version: %d\n", osVersion.dwMinorVersion);
+
+	PRTL_AVL_TABLE PiDDBCacheTable = nullptr;
+
+	if (osVersion.dwBuildNumber >= 18362)
+		PiDDBCacheTable = (PRTL_AVL_TABLE)dereference(find_pattern<uintptr_t>((void*)ntoskrnlBase, size, "\x48\x8d\x0d\x00\x00\x00\x00\xe8\x00\x00\x00\x00\x3d\x00\x00\x00\x00\x0f\x83", "xxx????x????x????xx"), 3);
+	else if (osVersion.dwBuildNumber >= 17763)
+		PiDDBCacheTable = (PRTL_AVL_TABLE)dereference(find_pattern<uintptr_t>((void*)ntoskrnlBase, size, "\x48\x8D\x0D\x00\x00\x00\x00\x4C\x89\x35\x00\x00\x00\x00\x49", "xxx????xxx????x"), 3);
+	else if (osVersion.dwBuildNumber >= 17134)
+		PiDDBCacheTable = (PRTL_AVL_TABLE)dereference(find_pattern<uintptr_t>((void*)ntoskrnlBase, size, "\x48\x8D\x0D\x00\x00\x00\x00\x4C\x89\x35\x00\x00\x00\x00\x49", "xxx????xxx????x"), 3);
 
 	log("PiDDBCacheTable: %d\n", PiDDBCacheTable);
 
@@ -154,10 +124,14 @@ static uint64_t clean_piddb_cache() {
 
 	log("clean_piddb_cache finished!");
 
+	KeLeaveGuardedRegion();
+
 	return 1;
 }
 
-static uint64_t clean_unloaded_drivers() {
+static uint64_t handle_clean_unloaded_drivers() {
+	KeEnterGuardedRegion();
+
 	log("clean_uloaded_drivers started!\n");
 	ULONG bytes = 0;
 	auto status = ZwQuerySystemInformation(SystemModuleInformation, 0, bytes, &bytes);
@@ -188,8 +162,25 @@ static uint64_t clean_unloaded_drivers() {
 		return 0;
 	}
 
-	// NOTE: 4C 8B ? ? ? ? ? 4C 8B C9 4D 85 ? 74 + 3 + current signature address = MmUnloadedDrivers
-	auto mmUnloadedDriversPtr = find_pattern<uintptr_t>((void*)ntoskrnlBase, ntoskrnlSize, "\x4C\x8B\x00\x00\x00\x00\x00\x4C\x8B\xC9\x4D\x85\x00\x74", "xx?????xxxxx?x");
+	// 1809: \x48\x8B\x05\x00\x00\x00\x00\x48\xF7\xD8\x1B\xC9\x81 xxx????xxxxxx
+	// 1903: \x4C\x8B\x00\x00\x00\x00\x00\x4C\x8B\xC9\x4D\x85\x00\x74 xx?????xxxxx?x + 3 + current signature address = MmUnloadedDrivers
+
+	RTL_OSVERSIONINFOW osVersion = { 0 };
+	osVersion.dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOW);
+	RtlGetVersion(&osVersion);
+
+	log("Windows Build Number: %d\n", osVersion.dwBuildNumber);
+	log("Windows Major Version: %d\n", osVersion.dwMajorVersion);
+	log("Windows Minor Version: %d\n", osVersion.dwMinorVersion);
+
+	uintptr_t mmUnloadedDriversPtr = 0;
+
+	if (osVersion.dwBuildNumber >= 18362)
+		mmUnloadedDriversPtr = find_pattern<uintptr_t>((void*)ntoskrnlBase, ntoskrnlSize, "\x4C\x8B\x00\x00\x00\x00\x00\x4C\x8B\xC9\x4D\x85\x00\x74", "xx?????xxxxx?x");
+	else if (osVersion.dwBuildNumber >= 17763)
+		mmUnloadedDriversPtr = find_pattern<uintptr_t>((void*)ntoskrnlBase, ntoskrnlSize, "\x48\x8B\x05\x00\x00\x00\x00\x48\xF7\xD8\x1B\xC9\x81", "xxx????xxxxxx");
+	else if (osVersion.dwBuildNumber >= 17134)
+		mmUnloadedDriversPtr = find_pattern<uintptr_t>((void*)ntoskrnlBase, ntoskrnlSize, "\x48\x8B\x05\x00\x00\x00\x00\x48\xF7\xD8\x1B\xC9\x81", "xxx????xxxxxx");
 
 	log("mmUnloadedDriversPtr: %d\n", mmUnloadedDriversPtr);
 
@@ -204,18 +195,94 @@ static uint64_t clean_unloaded_drivers() {
 
 	log("clean_uloaded_drivers finished!\n");
 
+	KeLeaveGuardedRegion();
+
 	return 1;
 }
 
-static uint64_t spoof_drives()
-{
-	log("Do your own drive spoofing, I'm not giving everything!");
+uint64_t handle_hwid_spoofing() {
+	KeEnterGuardedRegion();
 
-	return 1;
+	// 1809: \x4C\x8B\xDC\x49\x89\x5B\x10\x49\x89\x6B\x18\x49\x89\x73\x20\x57\x48\x83\xEC\x50 xxxxxxxxxxxxxxxxxxxx
+	// 1903: \x48\x89\x5C\x24\x00\x55\x56\x57\x48\x83\xEC\x50\x8B xxxx?xxxxxxxx
+
+	uintptr_t storportBase = 0;
+	size_t storportSize = 0;
+
+	storportBase = get_kernel_address("storport.sys", storportSize);
+
+	if (storportBase <= 0) {
+		log("get_kernel_address failed(storport)\n");
+		return 0;
+	}
+
+	RTL_OSVERSIONINFOW osVersion = { 0 };
+	osVersion.dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOW);
+	RtlGetVersion(&osVersion);
+
+	log("Windows Build Number: %d\n", osVersion.dwBuildNumber);
+	log("Windows Major Version: %d\n", osVersion.dwMajorVersion);
+	log("Windows Minor Version: %d\n", osVersion.dwMinorVersion);
+
+	if (osVersion.dwBuildNumber >= 18362)
+		pRegDevInt = (RaidUnitRegisterInterfaces)dereference(find_pattern<uintptr_t>((void*)storportBase, storportSize, "\x48\x89\x5C\x24\x00\x55\x56\x57\x48\x83\xEC\x50\x8B", "xxxx?xxxxxxxx"), 0);
+	else if (osVersion.dwBuildNumber >= 17763)
+		pRegDevInt = (RaidUnitRegisterInterfaces)dereference(find_pattern<uintptr_t>((void*)storportBase, storportSize, "\x4C\x8B\xDC\x49\x89\x5B\x10\x49\x89\x6B\x18\x49\x89\x73\x20\x57\x48\x83\xEC\x50", "xxxxxxxxxxxxxxxxxxxx"), 0);
+
+	log("pRegDevIntPtr: %d\n", pRegDevInt);
+
+	PDEVICE_OBJECT pObject = NULL;
+	PFILE_OBJECT pFileObj = NULL;
+
+	UNICODE_STRING DestinationString;
+
+	RtlInitUnicodeString(&DestinationString, L"\\Device\\RaidPort0");
+
+	NTSTATUS status = IoGetDeviceObjectPointer(&DestinationString, FILE_READ_DATA, &pFileObj, &pObject);
+
+	PDRIVER_OBJECT pDriver = pObject->DriverObject;
+
+	PDEVICE_OBJECT pDevice = pDriver->DeviceObject;
+
+	while (pDevice->NextDevice != NULL)
+	{
+		if (pDevice->DeviceType == FILE_DEVICE_DISK)
+		{
+			PHDD_EXTENSION pDeviceHDD = (PHDD_EXTENSION)pDevice->DeviceExtension;
+
+			CHAR HDDSPOOFED_TMP[32] = { 0x0 };
+
+			randstring(HDDSPOOFED_TMP, SERIAL_MAX_LENGTH - 1);
+
+			for (int i = 1; i <= SERIAL_MAX_LENGTH + 1; i++)
+			{
+				log("a i: %d\n", i);
+				memcpy(&HDDORG_BUFFER[HDD_count][i], &pDeviceHDD->pHDDSerial[i], sizeof(CHAR));
+				log("b i: %d\n", i);
+				memcpy(&HDDSPOOF_BUFFER[HDD_count][i], &HDDSPOOFED_TMP[i], sizeof(CHAR));
+				log("c i: %d\n", i);
+			}
+
+			RtlStringCchPrintfA(pDeviceHDD->pHDDSerial, SERIAL_MAX_LENGTH + 1, "%s", &HDDSPOOFED_TMP);
+
+			log("RtlStringCchPrintfA");
+
+			pRegDevInt(pDeviceHDD);
+
+			log("pRegDevInt: %d\n", pDeviceHDD);
+
+			HDD_count++;
+		}
+
+		pDevice = pDevice->NextDevice;
+	}
+
+	KeLeaveGuardedRegion();
 }
 
 uint64_t handle_incoming_packet(const Packet& packet)
 {
+	KeEnterGuardedRegion();
 	switch (packet.header.type)
 	{
 	case PacketType::packet_copy_memory:
@@ -225,17 +292,35 @@ uint64_t handle_incoming_packet(const Packet& packet)
 		return handle_get_base_address(packet.data.get_base_address);
 
 	case PacketType::packet_clean_piddbcachetable:
-		return clean_piddb_cache();
+		return handle_clean_piddb_cache();
 
 	case PacketType::packet_clean_mmunloadeddrivers:
-		return clean_unloaded_drivers();
+		return handle_clean_unloaded_drivers();
 
-	case PacketType::packet_spoof_drives:
-		return spoof_drives();
+	case PacketType::packet_hwid_spoofing:
+		return handle_hwid_spoofing();
 
 	default:
 		break;
 	}
 
+	KeLeaveGuardedRegion();
+
 	return uint64_t(STATUS_NOT_IMPLEMENTED);
+}
+
+// Send completion packet.
+bool complete_request(const SOCKET client_connection, const uint64_t result)
+{
+	KeEnterGuardedRegion();
+
+	Packet packet{ };
+
+	packet.header.magic = packet_magic;
+	packet.header.type = PacketType::packet_completed;
+	packet.data.completed.result = result;
+
+	KeLeaveGuardedRegion();
+
+	return send(client_connection, &packet, sizeof(packet), 0) != SOCKET_ERROR;
 }

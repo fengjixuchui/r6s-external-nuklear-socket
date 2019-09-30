@@ -167,7 +167,6 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="packet_handler.cpp" />
     <ClCompile Include="server.cpp" />
-    <ClCompile Include="util.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ksocket\berkeley.h" />

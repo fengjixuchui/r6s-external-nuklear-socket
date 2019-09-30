@@ -1,9 +1,7 @@
 #pragma once
 #include <ntddk.h>
-
-#include <intrin.h>
-#include <stdlib.h>
 #include <Ntstrsafe.h>
+#include "log.h"
 
 typedef enum _SYSTEM_INFORMATION_CLASS
 {
@@ -166,181 +164,6 @@ typedef enum _SYSTEM_INFORMATION_CLASS
 	MaxSystemInfoClass = 0x9c,
 } SYSTEM_INFORMATION_CLASS;
 
-typedef struct _DYNDATA
-{
-	UINT64 CallbackListOffset;
-}DYNDATA, * PDYNDATA;
-
-typedef struct _RTL_PROCESS_MODULE_INFORMATION
-{
-	HANDLE Section;         // Not filled in
-	PVOID MappedBase;
-	PVOID ImageBase;
-	ULONG ImageSize;
-	ULONG Flags;
-	USHORT LoadOrderIndex;
-	USHORT InitOrderIndex;
-	USHORT LoadCount;
-	USHORT OffsetToFileName;
-	UCHAR  FullPathName[MAXIMUM_FILENAME_LENGTH];
-} RTL_PROCESS_MODULE_INFORMATION, * PRTL_PROCESS_MODULE_INFORMATION;
-
-typedef struct _RTL_PROCESS_MODULES
-{
-	ULONG NumberOfModules;
-	RTL_PROCESS_MODULE_INFORMATION Modules[1];
-} RTL_PROCESS_MODULES, * PRTL_PROCESS_MODULES;
-
-typedef struct _CALLBACK_ENTRY {
-	UINT16 Version; // 0x0
-	UINT16 OperationRegistrationCount; // 0x2
-	UINT32 unk1; // 0x4
-	PVOID RegistrationContext; // 0x8
-	UNICODE_STRING Altitude; // 0x10
-} CALLBACK_ENTRY, * PCALLBACK_ENTRY;
-
-typedef struct _OBJECT_CALLBACK_ENTRY {
-	LIST_ENTRY CallbackList;
-	OB_OPERATION Operations;
-	ULONG Active;
-	/*OB_HANDLE*/ PCALLBACK_ENTRY CallbackEntry;
-	POBJECT_TYPE ObjectType;
-	POB_PRE_OPERATION_CALLBACK  PreOperation;
-	POB_POST_OPERATION_CALLBACK PostOperation;
-} OBJECT_CALLBACK_ENTRY, * POBJECT_CALLBACK_ENTRY;
-
-struct REQUEST_STRUCT
-{
-	PIO_COMPLETION_ROUTINE OldRoutine;
-	PVOID OldContext;
-	ULONG OutputBufferLength;
-	PVOID SystemBuffer;
-};
-
-typedef struct _PS_CALLBACK_ENTRY
-{
-	PVOID* Callback;
-	LARGE_INTEGER* Fillz;
-} PS_CALLBACK_ENTRY, * PPS_CALLBACK_ENTRY;
-
-typedef struct _OB_CALLBACK_ADDRESSES
-{
-	UINT64* pProcPreCallback, * pProcPostCallback;
-	UINT64* pThreadPreCallback, * pThreadPostCallback;
-	UINT64 OrigProcPre, OrigProcPost;
-	UINT64 OrigThreadPre, OrigThreadPost;
-}OB_CALLBACK_ADDRESSES, * POB_CALLBACK_ADDRESSES;
-
-typedef struct _IDINFO
-{
-	USHORT	wGenConfig;
-	USHORT	wNumCyls;
-	USHORT	wReserved;
-	USHORT	wNumHeads;
-	USHORT	wBytesPerTrack;
-	USHORT	wBytesPerSector;
-	USHORT	wNumSectorsPerTrack;
-	USHORT	wVendorUnique[3];
-	CHAR	sSerialNumber[20];
-	USHORT	wBufferType;
-	USHORT	wBufferSize;
-	USHORT	wECCSize;
-	CHAR	sFirmwareRev[8];
-	CHAR	sModelNumber[40];
-	USHORT	wMoreVendorUnique;
-	USHORT	wDoubleWordIO;
-	struct {
-		USHORT	Reserved : 8;
-		USHORT	DMA : 1;
-		USHORT	LBA : 1;
-		USHORT	DisIORDY : 1;
-		USHORT	IORDY : 1;
-		USHORT	SoftReset : 1;
-		USHORT	Overlap : 1;
-		USHORT	Queue : 1;
-		USHORT	InlDMA : 1;
-	} wCapabilities;
-	USHORT	wReserved1;
-	USHORT	wPIOTiming;
-	USHORT	wDMATiming;
-	struct {
-		USHORT	CHSNumber : 1;
-		USHORT	CycleNumber : 1;
-		USHORT	UnltraDMA : 1;
-		USHORT	Reserved : 13;
-	} wFieldValidity;
-	USHORT	wNumCurCyls;
-	USHORT	wNumCurHeads;
-	USHORT	wNumCurSectorsPerTrack;
-	USHORT	wCurSectorsLow;
-	USHORT	wCurSectorsHigh;
-	struct {
-		USHORT	CurNumber : 8;
-		USHORT	Multi : 1;
-		USHORT	Reserved : 7;
-	} wMultSectorStuff;
-	ULONG	dwTotalSectors;
-	USHORT	wSingleWordDMA;
-	struct {
-		USHORT	Mode0 : 1;
-		USHORT	Mode1 : 1;
-		USHORT	Mode2 : 1;
-		USHORT	Reserved1 : 5;
-		USHORT	Mode0Sel : 1;
-		USHORT	Mode1Sel : 1;
-		USHORT	Mode2Sel : 1;
-		USHORT	Reserved2 : 5;
-	} wMultiWordDMA;
-	struct {
-		USHORT	AdvPOIModes : 8;
-		USHORT	Reserved : 8;
-	} wPIOCapacity;
-	USHORT	wMinMultiWordDMACycle;
-	USHORT	wRecMultiWordDMACycle;
-	USHORT	wMinPIONoFlowCycle;
-	USHORT	wMinPOIFlowCycle;
-	USHORT	wReserved69[11];
-	struct {
-		USHORT	Reserved1 : 1;
-		USHORT	ATA1 : 1;
-		USHORT	ATA2 : 1;
-		USHORT	ATA3 : 1;
-		USHORT	ATA4 : 1;
-		USHORT	ATA5 : 1;
-		USHORT	ATA6 : 1;
-		USHORT	ATA7 : 1;
-		USHORT	ATA8 : 1;
-		USHORT	ATA9 : 1;
-		USHORT	ATA10 : 1;
-		USHORT	ATA11 : 1;
-		USHORT	ATA12 : 1;
-		USHORT	ATA13 : 1;
-		USHORT	ATA14 : 1;
-		USHORT	Reserved2 : 1;
-	} wMajorVersion;
-	USHORT	wMinorVersion;
-	USHORT	wReserved82[6];
-	struct {
-		USHORT	Mode0 : 1;
-		USHORT	Mode1 : 1;
-		USHORT	Mode2 : 1;
-		USHORT	Mode3 : 1;
-		USHORT	Mode4 : 1;
-		USHORT	Mode5 : 1;
-		USHORT	Mode6 : 1;
-		USHORT	Mode7 : 1;
-		USHORT	Mode0Sel : 1;
-		USHORT	Mode1Sel : 1;
-		USHORT	Mode2Sel : 1;
-		USHORT	Mode3Sel : 1;
-		USHORT	Mode4Sel : 1;
-		USHORT	Mode5Sel : 1;
-		USHORT	Mode6Sel : 1;
-		USHORT	Mode7Sel : 1;
-	} wUltraDMA;
-	USHORT	wReserved89[167];
-} IDINFO, * PIDINFO;
-
 typedef struct _SYSTEM_MODULE   // Information Class 11
 {
 	ULONG_PTR Reserved[2];
@@ -359,6 +182,65 @@ typedef struct _SYSTEM_MODULE_INFORMATION   // Information Class 11
 	ULONG_PTR ulModuleCount;
 	SYSTEM_MODULE Modules[1];
 } SYSTEM_MODULE_INFORMATION, * PSYSTEM_MODULE_INFORMATION;
+
+typedef struct _RTL_PROCESS_MODULE_INFORMATION
+{
+	HANDLE Section;         // Not filled in
+	PVOID MappedBase;
+	PVOID ImageBase;
+	ULONG ImageSize;
+	ULONG Flags;
+	USHORT LoadOrderIndex;
+	USHORT InitOrderIndex;
+	USHORT LoadCount;
+	USHORT OffsetToFileName;
+	UCHAR  FullPathName[MAXIMUM_FILENAME_LENGTH];
+} RTL_PROCESS_MODULE_INFORMATION, * PRTL_PROCESS_MODULE_INFORMATION;
+
+typedef struct _LDR_DATA_TABLE_ENTRY
+{
+	LIST_ENTRY InLoadOrderLinks;
+	LIST_ENTRY InMemoryOrderLinks;
+	LIST_ENTRY InInitializationOrderLinks;
+	PVOID DllBase;
+	PVOID EntryPoint;
+	ULONG SizeOfImage;
+	UNICODE_STRING FullDllName;
+	UNICODE_STRING BaseDllName;
+	// ...
+} LDR_DATA_TABLE_ENTRY, * PLDR_DATA_TABLE_ENTRY;
+
+typedef struct _RTL_PROCESS_MODULES
+{
+	ULONG NumberOfModules;
+	RTL_PROCESS_MODULE_INFORMATION Modules[1];
+} RTL_PROCESS_MODULES, * PRTL_PROCESS_MODULES;
+
+typedef struct _VendorInfo
+{
+	char pad_0x0000[0x8];
+	char Info[64];
+} VendorInfo;
+
+typedef struct _HDD_EXTENSION
+{
+	char pad_0x0000[0x60];
+	VendorInfo* pVendorInfo;
+	char pad_0x0068[0x8];
+	char* pHDDSerial;
+	char pad_0x0078[0x30];
+} HDD_EXTENSION, * PHDD_EXTENSION;
+
+typedef __int64(__fastcall* RaidUnitRegisterInterfaces)(PHDD_EXTENSION a1);
+RaidUnitRegisterInterfaces pRegDevInt = NULL;
+
+#define MAX_HDDS 10
+#define SERIAL_MAX_LENGTH 15
+
+INT HDD_count = 0;
+
+CHAR HDDSPOOF_BUFFER[MAX_HDDS][32] = { 0x20 };
+CHAR HDDORG_BUFFER[MAX_HDDS][32] = { 0 };
 
 struct piddbcache
 {
@@ -383,7 +265,7 @@ extern "C"
 
 	NTKERNELAPI NTSTATUS PsLookupProcessByProcessId(
 		IN HANDLE			ProcessId,
-		OUT PEPROCESS*		Process
+		OUT PEPROCESS* Process
 	);
 
 	NTKERNELAPI PVOID PsGetProcessSectionBaseAddress(
@@ -391,15 +273,76 @@ extern "C"
 	);
 
 	NTKERNELAPI NTSTATUS ZwQuerySystemInformation(
-		SYSTEM_INFORMATION_CLASS SystemInformationClass, 
-		PVOID SystemInformation, 
-		ULONG SystemInformationLength, 
+		SYSTEM_INFORMATION_CLASS SystemInformationClass,
+		PVOID SystemInformation,
+		ULONG SystemInformationLength,
 		PULONG ReturnLength
 	);
 
 	NTSYSAPI ULONG RtlRandomEx(
 		PULONG Seed
 	);
+}
+
+void randstring(char* randomString, size_t length) {
+
+	static char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+	ULONG seed = KeQueryTimeIncrement();
+
+	if (randomString)
+	{
+		for (int n = 0; n <= length; n++)
+		{
+			int key = RtlRandomEx(&seed) % (int)(sizeof(charset) - 1);
+			randomString[n] = charset[key];
+		}
+		//randomString[length] = '\0';
+	}
+}
+
+static uintptr_t get_kernel_address(const char* name, size_t& size) {
+	NTSTATUS status = STATUS_SUCCESS;
+	ULONG neededSize = 0;
+
+	ZwQuerySystemInformation(
+		SystemModuleInformation,
+		&neededSize,
+		0,
+		&neededSize
+	);
+
+	PSYSTEM_MODULE_INFORMATION pModuleList;
+
+	pModuleList = (PSYSTEM_MODULE_INFORMATION)ExAllocatePool(NonPagedPool, neededSize);
+
+	if (!pModuleList) {
+		log("ExAllocatePoolWithTag failed(kernel addr)\n");
+		return 0;
+	}
+
+	status = ZwQuerySystemInformation(SystemModuleInformation,
+		pModuleList,
+		neededSize,
+		0
+	);
+
+	ULONG i = 0;
+	uintptr_t address = 0;
+
+	for (i = 0; i < pModuleList->ulModuleCount; i++)
+	{
+		SYSTEM_MODULE mod = pModuleList->Modules[i];
+
+		address = uintptr_t(pModuleList->Modules[i].Base);
+		size = uintptr_t(pModuleList->Modules[i].Size);
+		if (strstr(mod.ImageName, name) != NULL)
+			break;
+	}
+
+	ExFreePool(pModuleList);
+
+	return address;
 }
 
 template <typename t = void*>

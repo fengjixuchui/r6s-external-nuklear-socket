@@ -7,10 +7,12 @@ extern bool		complete_request(SOCKET client_connection, uint64_t result);
 
 static SOCKET create_listen_socket()
 {
+	KeEnterGuardedRegion();
+
 	SOCKADDR_IN address{ };
 
-	address.sin_family	= AF_INET;
-	address.sin_port	= htons(server_port);
+	address.sin_family = AF_INET;
+	address.sin_port = htons(server_port);
 
 	const auto listen_socket = socket_listen(AF_INET, SOCK_STREAM, 0);
 	if (listen_socket == INVALID_SOCKET)
@@ -19,7 +21,7 @@ static SOCKET create_listen_socket()
 		return INVALID_SOCKET;
 	}
 
-	if (bind(listen_socket, (SOCKADDR*)&address, sizeof(address)) == SOCKET_ERROR)
+	if (bind(listen_socket, (SOCKADDR*)& address, sizeof(address)) == SOCKET_ERROR)
 	{
 		log("Failed to bind socket.");
 
@@ -35,19 +37,23 @@ static SOCKET create_listen_socket()
 		return INVALID_SOCKET;
 	}
 
+	KeLeaveGuardedRegion();
+
 	return listen_socket;
 }
 
 // Connection handling thread.
 static void NTAPI connection_thread(void* connection_socket)
 {
+	KeEnterGuardedRegion();
+
 	const auto client_connection = SOCKET(ULONG_PTR(connection_socket));
 	log("New connection.");
 
 	Packet packet{ };
 	while (true)
 	{
-		const auto result = recv(client_connection, (void*)&packet, sizeof(packet), 0);
+		const auto result = recv(client_connection, (void*)& packet, sizeof(packet), 0);
 		if (result <= 0)
 			break;
 
@@ -64,11 +70,15 @@ static void NTAPI connection_thread(void* connection_socket)
 
 	log("Connection closed.");
 	closesocket(client_connection);
+
+	KeLeaveGuardedRegion();
 }
 
 // Main server thread.
 void NTAPI server_thread(void*)
 {
+	KeEnterGuardedRegion();
+
 	auto status = KsInitialize();
 	if (!NT_SUCCESS(status))
 	{
@@ -99,34 +109,14 @@ void NTAPI server_thread(void*)
 			break;
 		}
 
-		HANDLE thread_handle = nullptr;
+		PWORK_QUEUE_ITEM WorkItem = (PWORK_QUEUE_ITEM)ExAllocatePool(NonPagedPool, sizeof(WORK_QUEUE_ITEM));
 
-		// Create a thread that will handle connection with client.
-		// TODO: Limit number of threads.
-		status = PsCreateSystemThread(
-			&thread_handle,
-			GENERIC_ALL,
-			nullptr,
-			nullptr,
-			nullptr,
-			connection_thread,
-			(void*)client_connection
-		);
+		ExInitializeWorkItem(WorkItem, connection_thread, (void*)client_connection);
 
-		if (!NT_SUCCESS(status))
-		{
-			log("Failed to create thread for handling client connection.");
-
-			closesocket(client_connection);
-			break;
-		}
-
-		ZwClose(thread_handle);
+		ExQueueWorkItem(WorkItem, DelayedWorkQueue);
 	}
 
 	closesocket(listen_socket);
 
-	// Better not destroy, maybe threads handling client connection are still running.
-	// TODO: Fix it
-	// KsDestroy();
+	KeLeaveGuardedRegion();
 }

@@ -1,161 +1,157 @@
 #pragma once
-#include <cmath>
+#ifndef VECTOR_H
+#define VECTOR_H
+
+#include <math.h>
+
+#define M_PI 3.14159265358979323846264338327950288419716939937510
 
 class Vector2
 {
 public:
+	Vector2() : x(0.f), y(0.f)
+	{
+
+	}
+
+	Vector2(float _x, float _y) : x(_x), y(_y)
+	{
+
+	}
+	~Vector2()
+	{
+
+	}
+
 	float x;
 	float y;
-
-	Vector2();
-	Vector2(float x, float y);
 };
 
 class Vector3
 {
 public:
+	Vector3() : x(0.f), y(0.f), z(0.f)
+	{
+
+	}
+
+	Vector3(float _x, float _y, float _z) : x(_x), y(_y), z(_z)
+	{
+
+	}
+	~Vector3()
+	{
+
+	}
+
 	float x;
 	float y;
 	float z;
 
-	Vector3();
-	Vector3(float x, float y, float z);
-
-	Vector3 operator+(const Vector3& vector) const;
-	Vector3 operator-(const Vector3& vector) const;
-	Vector3 operator-() const;
-	Vector3 operator*(float number) const;
-	Vector3 operator/(float number) const;
-
-	Vector3& operator+=(const Vector3& vector);
-	Vector3& operator-=(const Vector3& vector);
-	Vector3& operator*=(float number);
-	Vector3& operator/=(float number);
-
-	bool operator==(const Vector3& vector) const;
-	bool operator!=(const Vector3& vector) const;
-
-	inline float Dot(const Vector3& vector)
+	inline float Length()
 	{
-		return x * vector.x + y * vector.y + z * vector.z;
+		float ls = x * x + y * y + z * z;
+		return sqrt(ls);
 	}
 
-	inline float Distance(const Vector3& vector)
+
+	inline float Dot(Vector3 v)
 	{
-		return sqrt(
-			(x - vector.x) * (x - vector.x) +
-			(y - vector.y) * (y - vector.y) +
-			(z - vector.z) * (z - vector.z));
+		return x * v.x + y * v.y + z * v.z;
+	}
+
+	inline float Distance(Vector3 v)
+	{
+		return float(sqrtf(powf(v.x - x, 2.0) + powf(v.y - y, 2.0) + powf(v.z - z, 2.0)));
+	}
+
+	void clamp()
+	{
+		if (this->x > 180.f)
+			this->x -= 360.f;
+
+		else if (this->x < -180.f)
+			this->x += 360.f;
+
+		if (this->z > 180.f)
+			this->z -= 360.f;
+
+		else if (this->z < -180.f)
+			this->z += 360.f;
+
+		if (this->x < -89.f)
+			this->x = -89.f;
+
+		if (this->x > 89.f)
+			this->x = 89.f;
+
+		while (this->z < -180.0f)
+			this->z += 360.0f;
+
+		while (this->z > 180.0f)
+			this->z -= 360.0f;
+	}
+
+	Vector3 operator+(Vector3 v)
+	{
+		return Vector3(x + v.x, y + v.y, z + v.z);
+	}
+
+	Vector3 operator-(Vector3 v)
+	{
+		return Vector3(x - v.x, y - v.y, z - v.z);
+	}
+
+	Vector3 operator*(float number) const
+	{
+		return Vector3(x * number, y * number, z * number);
 	}
 };
 
-inline bool Vector3::operator==(const Vector3& vector) const
-{
-	return x == vector.x && y == vector.y && z == vector.z;
-}
-
-inline bool Vector3::operator!=(const Vector3& vector) const
-{
-	return x != vector.x || y != vector.y || z != vector.z;
-}
-
-inline Vector3 Vector3::operator+(const Vector3& vector) const
-{
-	return Vector3(x + vector.x, y + vector.y, z + vector.z);
-}
-
-inline Vector3 Vector3::operator-(const Vector3& vector) const
-{
-	return Vector3(x - vector.x, y - vector.y, z - vector.z);
-}
-
-inline Vector3 Vector3::operator-() const
-{
-	return Vector3(-x, -y, -z);
-}
-
-inline Vector3 Vector3::operator*(float number) const
-{
-	return Vector3(x * number, y * number, z * number);
-}
-
-inline Vector3 Vector3::operator/(float number) const
-{
-	return Vector3(x / number, y / number, z / number);
-}
-
-// Vector4
-class Vector4
+class Vector5
 {
 public:
+	Vector5() : x(0.f), y(0.f), z(0.f), w(0.f)
+	{
+
+	}
+
+	Vector5(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w)
+	{
+
+	}
+	~Vector5()
+	{
+
+	}
+
 	float x;
 	float y;
 	float z;
 	float w;
+};
 
-	Vector4();
-	Vector4(float x, float y, float z, float w);
 
-	Vector4 operator+(const Vector4& vector) const;
-	Vector4 operator-(const Vector4& vector) const;
-	Vector4 operator-() const;
-	Vector4 operator*(float number) const;
-	Vector4 operator/(float number) const;
-
-	Vector4& operator+=(const Vector4& vector);
-	Vector4& operator-=(const Vector4& vector);
-	Vector4& operator*=(float number);
-	Vector4& operator/=(float number);
-
-	bool operator==(const Vector4& vector) const;
-	bool operator!=(const Vector4& vector) const;
-
-	inline float Dot(const Vector4& vector)
+class Vector4
+{
+public:
+	float mData[4];
+	float w()
 	{
-		return x * vector.x + y * vector.y + z * vector.z + w * vector.w;
+		return mData[3];
 	}
-
-	inline float Distance(const Vector4& vector)
+	float x()
 	{
-		return sqrt(
-			(x - vector.x) * (x - vector.x) +
-			(y - vector.y) * (y - vector.y) +
-			(z - vector.z) * (z - vector.z) +
-			(w - vector.w) * (w - vector.w));
+		return mData[0];
+	}
+	float y()
+	{
+		return mData[1];
+	}
+	float z()
+	{
+		return mData[2];
 	}
 };
 
-inline bool Vector4::operator==(const Vector4& vector) const
-{
-	return x == vector.x && y == vector.y && z == vector.z && w == vector.w;
-}
-
-inline bool Vector4::operator!=(const Vector4& vector) const
-{
-	return x != vector.x || y != vector.y || z != vector.z || w != vector.w;
-}
-
-inline Vector4 Vector4::operator+(const Vector4& vector) const
-{
-	return Vector4(x + vector.x, y + vector.y, z + vector.z, w + vector.w);
-}
-
-inline Vector4 Vector4::operator-(const Vector4& vector) const
-{
-	return Vector4(x - vector.x, y - vector.y, z - vector.z, w - vector.w);
-}
-
-inline Vector4 Vector4::operator-() const
-{
-	return Vector4(-x, -y, -z, -w);
-}
-
-inline Vector4 Vector4::operator*(float number) const
-{
-	return Vector4(x * number, y * number, z * number, w * number);
-}
-
-inline Vector4 Vector4::operator/(float number) const
-{
-	return Vector4(x / number, y / number, z / number, w / number);
-}
+#endif
