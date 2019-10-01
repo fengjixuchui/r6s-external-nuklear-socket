@@ -21,4 +21,4 @@ Cheat is currently undetected on BE, cheat has not been tested on EAC.
 (Video of cheat working on be: https://i.gyazo.com/9f6f07417f6894a649f21dc55435eca1.mp4)
 
 ## Contact
-Use it for whatever you want. Feel free to add me on discord if help is needed (burnt chicken nugget#0481).
+Use it for whatever you want. Feel free to add me on discord if help is needed (magnum dong#0481).
