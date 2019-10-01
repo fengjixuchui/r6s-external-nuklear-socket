@@ -120,9 +120,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
-    <IncludePath>$(CRT_IncludePath);$(KM_IncludePath);$(KIT_SHARED_IncludePath);C:\Program Files\VMProtect Ultimate\Include\C</IncludePath>
-    <LibraryPath>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);C:\Program Files\VMProtect Ultimate\Lib\Windows;</LibraryPath>
-    <LibraryWPath>$(WindowsSDK_MetadataPath);C:\Program Files\VMProtect Ultimate\Lib\Windows;</LibraryWPath>
+    <IncludePath>$(CRT_IncludePath);$(KM_IncludePath);$(KIT_SHARED_IncludePath);</IncludePath>
+    <LibraryPath>$(DDK_LibraryPath_DDKPlatform);$(LibraryPath);</LibraryPath>
+    <LibraryWPath>$(WindowsSDK_MetadataPath);</LibraryWPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
