@@ -16,12 +16,14 @@ Application comes with a couple examples of how to do a cool gui: login panel & 
   <img width="258" src="https://i.gyazo.com/d638a026986b0cfdb3a3142b84c4eda9.png" alt="logo">
   <img width="258" src="https://i.gyazo.com/aecea264cba5c72d05f25976a05ffb9a.png" alt="logo">
 </div>
-## String Encryption
 
+## String Encryption
 Strings are encypted using xor string:
+
 <div align="center">
   <img width="600" src="https://i.gyazo.com/f0d8ccc0789cc55ab43837919e294487.png" alt="logo">
 </div>
+
 ## Information
 Cheat is currently undetected on BE, cheat has not been tested on EAC.
 (Video of cheat working on be: https://i.gyazo.com/9f6f07417f6894a649f21dc55435eca1.mp4)
