@@ -20,7 +20,7 @@ Application comes with a couple examples of how to do a cool gui: login panel & 
 
 Strings are encypted using xor string:
 <div align="center">
-  <img width="258" src="https://i.gyazo.com/f0d8ccc0789cc55ab43837919e294487.png" alt="logo">
+  <img width="600" src="https://i.gyazo.com/f0d8ccc0789cc55ab43837919e294487.png" alt="logo">
 </div>
 ## Information
 Cheat is currently undetected on BE, cheat has not been tested on EAC.
