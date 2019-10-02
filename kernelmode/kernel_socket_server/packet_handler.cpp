@@ -4,8 +4,6 @@
 
 static uint64_t handle_copy_memory(const PacketCopyMemory& packet)
 {
-	KeEnterGuardedRegion();
-
 	PEPROCESS dest_process = nullptr;
 	PEPROCESS src_process = nullptr;
 
@@ -34,15 +32,11 @@ static uint64_t handle_copy_memory(const PacketCopyMemory& packet)
 	ObDereferenceObject(dest_process);
 	ObDereferenceObject(src_process);
 
-	KeLeaveGuardedRegion();
-
 	return uint64_t(status);
 }
 
 static uint64_t handle_get_base_address(const PacketGetBaseAddress& packet)
 {
-	KeEnterGuardedRegion();
-
 	PEPROCESS process = nullptr;
 	NTSTATUS  status = PsLookupProcessByProcessId(HANDLE(packet.process_id), &process);
 
@@ -52,14 +46,10 @@ static uint64_t handle_get_base_address(const PacketGetBaseAddress& packet)
 	const auto base_address = uint64_t(PsGetProcessSectionBaseAddress(process));
 	ObDereferenceObject(process);
 
-	KeLeaveGuardedRegion();
-
 	return base_address;
 }
 
 static uint64_t handle_clean_piddb_cache() {
-	KeEnterGuardedRegion();
-
 	log("clean_piddb_cache started!");
 
 	size_t size;
@@ -124,14 +114,10 @@ static uint64_t handle_clean_piddb_cache() {
 
 	log("clean_piddb_cache finished!");
 
-	KeLeaveGuardedRegion();
-
 	return 1;
 }
 
 static uint64_t handle_clean_unloaded_drivers() {
-	KeEnterGuardedRegion();
-
 	log("clean_uloaded_drivers started!\n");
 	ULONG bytes = 0;
 	auto status = ZwQuerySystemInformation(SystemModuleInformation, 0, bytes, &bytes);
@@ -195,14 +181,10 @@ static uint64_t handle_clean_unloaded_drivers() {
 
 	log("clean_uloaded_drivers finished!\n");
 
-	KeLeaveGuardedRegion();
-
 	return 1;
 }
 
 uint64_t handle_hwid_spoofing() {
-	KeEnterGuardedRegion();
-
 	// 1809: \x4C\x8B\xDC\x49\x89\x5B\x10\x49\x89\x6B\x18\x49\x89\x73\x20\x57\x48\x83\xEC\x50 xxxxxxxxxxxxxxxxxxxx
 	// 1903: \x48\x89\x5C\x24\x00\x55\x56\x57\x48\x83\xEC\x50\x8B xxxx?xxxxxxxx
 
@@ -276,13 +258,10 @@ uint64_t handle_hwid_spoofing() {
 
 		pDevice = pDevice->NextDevice;
 	}
-
-	KeLeaveGuardedRegion();
 }
 
 uint64_t handle_incoming_packet(const Packet& packet)
 {
-	KeEnterGuardedRegion();
 	switch (packet.header.type)
 	{
 	case PacketType::packet_copy_memory:
@@ -304,23 +283,17 @@ uint64_t handle_incoming_packet(const Packet& packet)
 		break;
 	}
 
-	KeLeaveGuardedRegion();
-
 	return uint64_t(STATUS_NOT_IMPLEMENTED);
 }
 
 // Send completion packet.
 bool complete_request(const SOCKET client_connection, const uint64_t result)
 {
-	KeEnterGuardedRegion();
-
 	Packet packet{ };
 
 	packet.header.magic = packet_magic;
 	packet.header.type = PacketType::packet_completed;
 	packet.data.completed.result = result;
-
-	KeLeaveGuardedRegion();
 
 	return send(client_connection, &packet, sizeof(packet), 0) != SOCKET_ERROR;
 }
