@@ -7,8 +7,6 @@ extern bool		complete_request(SOCKET client_connection, uint64_t result);
 
 static SOCKET create_listen_socket()
 {
-	KeEnterGuardedRegion();
-
 	SOCKADDR_IN address{ };
 
 	address.sin_family = AF_INET;
@@ -37,16 +35,12 @@ static SOCKET create_listen_socket()
 		return INVALID_SOCKET;
 	}
 
-	KeLeaveGuardedRegion();
-
 	return listen_socket;
 }
 
 // Connection handling thread.
 static void NTAPI connection_thread(void* connection_socket)
 {
-	KeEnterGuardedRegion();
-
 	const auto client_connection = SOCKET(ULONG_PTR(connection_socket));
 	log("New connection.");
 
@@ -70,15 +64,11 @@ static void NTAPI connection_thread(void* connection_socket)
 
 	log("Connection closed.");
 	closesocket(client_connection);
-
-	KeLeaveGuardedRegion();
 }
 
 // Main server thread.
 void NTAPI server_thread(void*)
 {
-	KeEnterGuardedRegion();
-
 	auto status = KsInitialize();
 	if (!NT_SUCCESS(status))
 	{
@@ -117,6 +107,4 @@ void NTAPI server_thread(void*)
 	}
 
 	closesocket(listen_socket);
-
-	KeLeaveGuardedRegion();
 }
