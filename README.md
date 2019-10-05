@@ -1,6 +1,6 @@
 <div align="center">
   <img width="258" src="https://i.redd.it/lncarhwqwxg11.png" alt="logo">
-  <h1>r6s external nuklear</h1>
+  <h1>r6s external nuklear socket</h1>
 </div>
 
 Simple copy paste ready base for external cheats using sockets for km-um communication, intended to be manual mapped using drvmap or kdmapper.
